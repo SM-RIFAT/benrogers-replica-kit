@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Github, Linkedin, Mail, ChevronDown } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const HeroSection = () => {
   const scrollToAbout = () => {
@@ -15,6 +16,20 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-black/20"></div>
       <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
         <div className="animate-fade-in">
+          {/* Profile Image */}
+          <div className="mb-8 flex justify-center">
+            <Avatar className="w-32 h-32 border-4 border-purple-400/50 shadow-2xl">
+              <AvatarImage 
+                src="/placeholder.svg" 
+                alt="S M Golam Rifat"
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-600 text-white text-2xl font-bold">
+                SGR
+              </AvatarFallback>
+            </Avatar>
+          </div>
+
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6">
             Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">S M Golam Rifat</span>
           </h1>
