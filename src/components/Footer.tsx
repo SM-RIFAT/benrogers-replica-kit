@@ -25,7 +25,7 @@ const Footer = () => {
               <Linkedin size={20} />
             </a>
             <a
-              href="mailto:ben@example.com"
+              href="mailto:rifat@example.com"
               className="p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-all duration-300"
             >
               <Mail size={20} />
@@ -36,10 +36,10 @@ const Footer = () => {
             <p className="text-gray-400 flex items-center space-x-2">
               <span>Made with</span>
               <Heart size={16} className="text-red-500" />
-              <span>by Ben Rogers</span>
+              <span>by S M Golam Rifat</span>
             </p>
             <p className="text-gray-500 text-sm mt-2">
-              © 2024 Ben Rogers. All rights reserved.
+              © 2024 S M Golam Rifat. All rights reserved.
             </p>
           </div>
         </div>

@@ -16,13 +16,13 @@ const HeroSection = () => {
       <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
         <div className="animate-fade-in">
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6">
-            Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Ben Rogers</span>
+            Hi, I'm <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">S M Golam Rifat</span>
           </h1>
           <p className="text-xl sm:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            Full Stack Developer & UI/UX Designer
+            Deep Learning Expert & AI Researcher
           </p>
           <p className="text-lg text-gray-400 mb-12 max-w-2xl mx-auto">
-            I create beautiful, functional web applications that provide exceptional user experiences.
+            I specialize in developing cutting-edge deep learning solutions and advancing the field of artificial intelligence through research and innovation.
           </p>
           
           <div className="flex justify-center space-x-6 mb-12">
@@ -43,7 +43,7 @@ const HeroSection = () => {
               <Linkedin size={24} />
             </a>
             <a
-              href="mailto:ben@example.com"
+              href="mailto:rifat@example.com"
               className="p-3 rounded-full bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-all duration-300 hover:scale-110"
             >
               <Mail size={24} />

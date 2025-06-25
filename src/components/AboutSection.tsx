@@ -1,28 +1,28 @@
 
 import React from 'react';
-import { Code, Palette, Zap, Users } from 'lucide-react';
+import { Brain, Database, Cpu, BookOpen } from 'lucide-react';
 
 const AboutSection = () => {
   const skills = [
     {
-      icon: <Code size={40} />,
-      title: 'Frontend Development',
-      description: 'Expert in React, TypeScript, and modern CSS frameworks'
+      icon: <Brain size={40} />,
+      title: 'Deep Learning',
+      description: 'Expert in neural networks, CNNs, RNNs, and transformer architectures'
     },
     {
-      icon: <Zap size={40} />,
-      title: 'Backend Development',
-      description: 'Proficient in Node.js, Python, and database management'
+      icon: <Cpu size={40} />,
+      title: 'Machine Learning',
+      description: 'Proficient in supervised, unsupervised, and reinforcement learning'
     },
     {
-      icon: <Palette size={40} />,
-      title: 'UI/UX Design',
-      description: 'Creating intuitive and beautiful user interfaces'
+      icon: <Database size={40} />,
+      title: 'Data Science',
+      description: 'Advanced skills in data analysis, visualization, and big data processing'
     },
     {
-      icon: <Users size={40} />,
-      title: 'Collaboration',
-      description: 'Strong team player with excellent communication skills'
+      icon: <BookOpen size={40} />,
+      title: 'Research',
+      description: 'Published researcher with expertise in AI innovation and methodology'
     }
   ];
 
@@ -34,9 +34,9 @@ const AboutSection = () => {
             About <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Me</span>
           </h2>
           <p className="text-lg text-gray-300 max-w-3xl mx-auto">
-            I'm a passionate developer with over 5 years of experience creating digital solutions 
-            that bridge the gap between design and functionality. I love turning complex problems 
-            into simple, beautiful, and intuitive solutions.
+            I'm a passionate deep learning expert with extensive experience in developing cutting-edge AI solutions. 
+            My research focuses on advancing the state-of-the-art in neural networks, computer vision, and natural language processing. 
+            I believe in the transformative power of AI to solve complex real-world problems.
           </p>
         </div>
 
@@ -60,9 +60,9 @@ const AboutSection = () => {
         </div>
 
         <div className="mt-16 text-center">
-          <h3 className="text-2xl font-bold text-white mb-8">Technologies I Work With</h3>
+          <h3 className="text-2xl font-bold text-white mb-8">Technologies & Frameworks</h3>
           <div className="flex flex-wrap justify-center gap-4">
-            {['React', 'TypeScript', 'Node.js', 'Python', 'PostgreSQL', 'MongoDB', 'AWS', 'Docker', 'Git', 'Figma'].map((tech) => (
+            {['Python', 'TensorFlow', 'PyTorch', 'Keras', 'OpenCV', 'NumPy', 'Pandas', 'Scikit-learn', 'CUDA', 'Docker', 'AWS', 'Google Cloud'].map((tech) => (
               <span
                 key={tech}
                 className="px-4 py-2 bg-gray-800 text-gray-300 rounded-full hover:bg-purple-800 hover:text-white transition-colors"
