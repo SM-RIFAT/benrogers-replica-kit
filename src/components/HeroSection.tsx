@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { Github, Linkedin, Mail, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import AnimatedBackground from './AnimatedBackground';
 
 const HeroSection = () => {
   const scrollToAbout = () => {
@@ -12,9 +12,10 @@ const HeroSection = () => {
   };
 
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center relative bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800">
-      <div className="absolute inset-0 bg-black/20"></div>
-      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8">
+    <section id="home" className="min-h-screen flex items-center justify-center relative bg-gradient-to-br from-gray-900 via-purple-900 to-violet-800 overflow-hidden">
+      <AnimatedBackground />
+      <div className="absolute inset-0 bg-black/20" style={{ zIndex: 2 }}></div>
+      <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8" style={{ zIndex: 3 }}>
         <div className="animate-fade-in">
           {/* Profile Image */}
           <div className="mb-8 flex justify-center">
