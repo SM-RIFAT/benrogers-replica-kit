@@ -1,17 +1,20 @@
 
 import React, { useEffect, useRef } from 'react';
 
-interface Particle {
+interface Polygon {
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
+  rotation: number;
+  rotationSpeed: number;
+  opacity: number;
 }
 
 const AnimatedBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  const polygonsRef = useRef<Polygon[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number>();
 
@@ -27,146 +30,168 @@ const AnimatedBackground = () => {
       canvas.height = window.innerHeight;
     };
 
-    const createParticles = () => {
-      const particles: Particle[] = [];
-      const numberOfParticles = Math.floor((canvas.width * canvas.height) / 15000);
+    const createPolygons = () => {
+      const polygons: Polygon[] = [];
+      const numberOfPolygons = 12;
 
-      for (let i = 0; i < numberOfParticles; i++) {
-        particles.push({
+      for (let i = 0; i < numberOfPolygons; i++) {
+        polygons.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 2 + 1,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          size: Math.random() * 80 + 40,
+          rotation: Math.random() * Math.PI * 2,
+          rotationSpeed: (Math.random() - 0.5) * 0.01,
+          opacity: Math.random() * 0.3 + 0.1,
         });
       }
-      particlesRef.current = particles;
+      polygonsRef.current = polygons;
     };
 
-    const drawParticles = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const drawPolygon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, rotation: number, opacity: number) => {
+      const sides = 6;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rotation);
+      ctx.beginPath();
       
-      const particles = particlesRef.current;
+      for (let i = 0; i < sides; i++) {
+        const angle = (i * 2 * Math.PI) / sides;
+        const px = Math.cos(angle) * size;
+        const py = Math.sin(angle) * size;
+        
+        if (i === 0) {
+          ctx.moveTo(px, py);
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      
+      ctx.closePath();
+      ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    const drawConnections = () => {
+      const polygons = polygonsRef.current;
       const mouse = mouseRef.current;
 
-      // Draw connections
-      ctx.strokeStyle = 'rgba(147, 51, 234, 0.1)';
-      ctx.lineWidth = 1;
+      // Draw connections between polygons
+      for (let i = 0; i < polygons.length; i++) {
+        for (let j = i + 1; j < polygons.length; j++) {
+          const dx = polygons[i].x - polygons[j].x;
+          const dy = polygons[i].y - polygons[j].y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
 
-      for (let i = 0; i < particles.length; i++) {
-        const particle = particles[i];
-
-        // Connect to nearby particles
-        for (let j = i + 1; j < particles.length; j++) {
-          const otherParticle = particles[j];
-          const distance = Math.sqrt(
-            Math.pow(particle.x - otherParticle.x, 2) + 
-            Math.pow(particle.y - otherParticle.y, 2)
-          );
-
-          if (distance < 150) {
-            const opacity = 1 - distance / 150;
-            ctx.strokeStyle = `rgba(147, 51, 234, ${opacity * 0.1})`;
+          if (distance < 200) {
+            const opacity = (1 - distance / 200) * 0.15;
+            ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
+            ctx.lineWidth = 0.8;
             ctx.beginPath();
-            ctx.moveTo(particle.x, particle.y);
-            ctx.lineTo(otherParticle.x, otherParticle.y);
+            ctx.moveTo(polygons[i].x, polygons[i].y);
+            ctx.lineTo(polygons[j].x, polygons[j].y);
             ctx.stroke();
           }
         }
 
-        // Connect to mouse
-        const mouseDistance = Math.sqrt(
-          Math.pow(particle.x - mouse.x, 2) + 
-          Math.pow(particle.y - mouse.y, 2)
-        );
+        // Draw connections to mouse
+        const dx = polygons[i].x - mouse.x;
+        const dy = polygons[i].y - mouse.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (mouseDistance < 200) {
-          const opacity = 1 - mouseDistance / 200;
-          ctx.strokeStyle = `rgba(236, 72, 153, ${opacity * 0.3})`;
+        if (distance < 150) {
+          const opacity = (1 - distance / 150) * 0.4;
+          ctx.strokeStyle = `rgba(236, 72, 153, ${opacity})`;
+          ctx.lineWidth = 1.2;
           ctx.beginPath();
-          ctx.moveTo(particle.x, particle.y);
+          ctx.moveTo(polygons[i].x, polygons[i].y);
           ctx.lineTo(mouse.x, mouse.y);
           ctx.stroke();
         }
       }
-
-      // Draw particles
-      ctx.fillStyle = 'rgba(147, 51, 234, 0.6)';
-      particles.forEach(particle => {
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
     };
 
-    const updateParticles = () => {
-      const particles = particlesRef.current;
+    const updatePolygons = () => {
+      const polygons = polygonsRef.current;
       const mouse = mouseRef.current;
 
-      particles.forEach(particle => {
-        // Mouse attraction
-        const dx = mouse.x - particle.x;
-        const dy = mouse.y - particle.y;
+      polygons.forEach(polygon => {
+        // Mouse attraction with smooth easing
+        const dx = mouse.x - polygon.x;
+        const dy = mouse.y - polygon.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 100) {
-          const force = (100 - distance) / 1000;
-          particle.vx += dx * force;
-          particle.vy += dy * force;
+        if (distance < 120) {
+          const force = (120 - distance) / 120 * 0.002;
+          polygon.vx += dx * force;
+          polygon.vy += dy * force;
         }
 
         // Update position
-        particle.x += particle.vx;
-        particle.y += particle.vy;
+        polygon.x += polygon.vx;
+        polygon.y += polygon.vy;
+        polygon.rotation += polygon.rotationSpeed;
 
-        // Add some friction
-        particle.vx *= 0.995;
-        particle.vy *= 0.995;
+        // Apply friction
+        polygon.vx *= 0.98;
+        polygon.vy *= 0.98;
 
-        // Boundary checking
-        if (particle.x < 0 || particle.x > canvas.width) {
-          particle.vx *= -1;
-          particle.x = Math.max(0, Math.min(canvas.width, particle.x));
-        }
-        if (particle.y < 0 || particle.y > canvas.height) {
-          particle.vy *= -1;
-          particle.y = Math.max(0, Math.min(canvas.height, particle.y));
-        }
+        // Boundary wrapping
+        if (polygon.x < -polygon.size) polygon.x = canvas.width + polygon.size;
+        if (polygon.x > canvas.width + polygon.size) polygon.x = -polygon.size;
+        if (polygon.y < -polygon.size) polygon.y = canvas.height + polygon.size;
+        if (polygon.y > canvas.height + polygon.size) polygon.y = -polygon.size;
+      });
+    };
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw connections first
+      drawConnections();
+      
+      // Draw polygons
+      polygonsRef.current.forEach(polygon => {
+        drawPolygon(ctx, polygon.x, polygon.y, polygon.size, polygon.rotation, polygon.opacity);
       });
     };
 
     const animate = () => {
-      updateParticles();
-      drawParticles();
+      updatePolygons();
+      draw();
       animationRef.current = requestAnimationFrame(animate);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
       mouseRef.current = {
-        x: e.clientX,
-        y: e.clientY,
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
       };
     };
 
     const handleResize = () => {
       resizeCanvas();
-      createParticles();
+      createPolygons();
     };
 
     // Initialize
     resizeCanvas();
-    createParticles();
+    createPolygons();
     animate();
 
     // Event listeners
-    window.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('resize', handleResize);
 
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
-      window.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
