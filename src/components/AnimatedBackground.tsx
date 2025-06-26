@@ -6,9 +6,11 @@ interface Particle {
   y: number;
   vx: number;
   vy: number;
-  size: number;
+  baseSize: number;
+  currentSize: number;
   opacity: number;
   hue: number;
+  phase: number;
   type: 'circle' | 'triangle' | 'diamond';
 }
 
@@ -32,55 +34,70 @@ const AnimatedBackground = () => {
 
     const createParticles = () => {
       const particles: Particle[] = [];
-      const numberOfParticles = Math.min(80, Math.floor((canvas.width * canvas.height) / 8000));
+      const numberOfParticles = Math.min(60, Math.floor((canvas.width * canvas.height) / 10000));
 
       for (let i = 0; i < numberOfParticles; i++) {
+        const baseSize = Math.random() * 3 + 2;
         particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.5,
-          vy: (Math.random() - 0.5) * 0.5,
-          size: Math.random() * 4 + 2,
-          opacity: Math.random() * 0.6 + 0.2,
-          hue: Math.random() * 60 + 240, // Blue to purple range
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          baseSize: baseSize,
+          currentSize: baseSize,
+          opacity: Math.random() * 0.5 + 0.3,
+          hue: Math.random() * 60 + 200,
+          phase: Math.random() * Math.PI * 2,
           type: ['circle', 'triangle', 'diamond'][Math.floor(Math.random() * 3)] as 'circle' | 'triangle' | 'diamond',
         });
       }
       particlesRef.current = particles;
     };
 
-    const drawCircle = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
-      ctx.fill();
-      
-      // Add glow effect
-      ctx.shadowColor = `hsla(${hue}, 70%, 60%, ${opacity * 0.8})`;
-      ctx.shadowBlur = size * 2;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-    };
+    const drawShape = (particle: Particle) => {
+      // Ensure size is always positive and reasonable
+      const size = Math.max(0.5, Math.abs(particle.currentSize));
+      const { x, y, opacity, hue, type } = particle;
 
-    const drawTriangle = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x, y - size);
-      ctx.lineTo(x - size * 0.866, y + size * 0.5);
-      ctx.lineTo(x + size * 0.866, y + size * 0.5);
-      ctx.closePath();
-      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
-      ctx.fill();
-    };
+      ctx.save();
+      ctx.globalAlpha = opacity;
 
-    const drawDiamond = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
-      ctx.beginPath();
-      ctx.moveTo(x, y - size);
-      ctx.lineTo(x + size, y);
-      ctx.lineTo(x, y + size);
-      ctx.lineTo(x - size, y);
-      ctx.closePath();
-      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
-      ctx.fill();
+      switch (type) {
+        case 'circle':
+          ctx.beginPath();
+          ctx.arc(x, y, size, 0, Math.PI * 2);
+          ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+          ctx.fill();
+          
+          // Glow effect
+          ctx.shadowColor = `hsl(${hue}, 70%, 60%)`;
+          ctx.shadowBlur = size * 1.5;
+          ctx.fill();
+          break;
+
+        case 'triangle':
+          ctx.beginPath();
+          ctx.moveTo(x, y - size);
+          ctx.lineTo(x - size * 0.866, y + size * 0.5);
+          ctx.lineTo(x + size * 0.866, y + size * 0.5);
+          ctx.closePath();
+          ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+          ctx.fill();
+          break;
+
+        case 'diamond':
+          ctx.beginPath();
+          ctx.moveTo(x, y - size);
+          ctx.lineTo(x + size, y);
+          ctx.lineTo(x, y + size);
+          ctx.lineTo(x - size, y);
+          ctx.closePath();
+          ctx.fillStyle = `hsl(${hue}, 70%, 60%)`;
+          ctx.fill();
+          break;
+      }
+
+      ctx.restore();
     };
 
     const drawConnections = () => {
@@ -92,16 +109,9 @@ const AnimatedBackground = () => {
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 120) {
-            const opacity = (1 - distance / 120) * 0.15;
-            const gradient = ctx.createLinearGradient(
-              particles[i].x, particles[i].y,
-              particles[j].x, particles[j].y
-            );
-            gradient.addColorStop(0, `hsla(${particles[i].hue}, 70%, 60%, ${opacity})`);
-            gradient.addColorStop(1, `hsla(${particles[j].hue}, 70%, 60%, ${opacity})`);
-            
-            ctx.strokeStyle = gradient;
+          if (distance < 150) {
+            const opacity = (1 - distance / 150) * 0.2;
+            ctx.strokeStyle = `hsla(${(particles[i].hue + particles[j].hue) / 2}, 70%, 60%, ${opacity})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
@@ -115,15 +125,16 @@ const AnimatedBackground = () => {
     const updateParticles = () => {
       const particles = particlesRef.current;
       const mouse = mouseRef.current;
+      const time = Date.now() * 0.001;
 
       particles.forEach(particle => {
-        // Mouse interaction - gentle attraction
+        // Mouse interaction
         const dx = mouse.x - particle.x;
         const dy = mouse.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
         if (distance < 200) {
-          const force = (200 - distance) / 200 * 0.0008;
+          const force = (200 - distance) / 200 * 0.001;
           particle.vx += dx * force;
           particle.vy += dy * force;
         }
@@ -132,23 +143,27 @@ const AnimatedBackground = () => {
         particle.x += particle.vx;
         particle.y += particle.vy;
 
-        // Apply gentle friction
-        particle.vx *= 0.995;
-        particle.vy *= 0.995;
+        // Gentle friction
+        particle.vx *= 0.998;
+        particle.vy *= 0.998;
 
-        // Boundary behavior - wrap around smoothly
+        // Boundary wrapping
         if (particle.x < -20) particle.x = canvas.width + 20;
         if (particle.x > canvas.width + 20) particle.x = -20;
         if (particle.y < -20) particle.y = canvas.height + 20;
         if (particle.y > canvas.height + 20) particle.y = -20;
 
-        // Subtle size pulsing
-        particle.size += Math.sin(Date.now() * 0.001 + particle.x * 0.01) * 0.02;
+        // Size pulsing - ensure it stays positive
+        const sizeVariation = Math.sin(time + particle.phase) * 0.3;
+        particle.currentSize = Math.max(0.5, particle.baseSize + sizeVariation);
       });
     };
 
     const draw = () => {
-      // Create gradient background overlay
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Background gradient
       const gradient = ctx.createRadialGradient(
         canvas.width / 2, canvas.height / 2, 0,
         canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
@@ -156,37 +171,33 @@ const AnimatedBackground = () => {
       gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
       gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
       
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw connections first
+
+      // Draw connections
+      ctx.shadowBlur = 0;
       drawConnections();
-      
+
       // Draw particles
       particlesRef.current.forEach(particle => {
-        ctx.save();
-        
-        switch (particle.type) {
-          case 'circle':
-            drawCircle(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
-            break;
-          case 'triangle':
-            drawTriangle(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
-            break;
-          case 'diamond':
-            drawDiamond(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
-            break;
-        }
-        
-        ctx.restore();
+        drawShape(particle);
       });
     };
 
     const animate = () => {
-      updateParticles();
-      draw();
-      animationRef.current = requestAnimationFrame(animate);
+      try {
+        updateParticles();
+        draw();
+        animationRef.current = requestAnimationFrame(animate);
+      } catch (error) {
+        console.error('Animation error:', error);
+        // Try to restart animation after a brief pause
+        setTimeout(() => {
+          if (animationRef.current) {
+            animationRef.current = requestAnimationFrame(animate);
+          }
+        }, 100);
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
