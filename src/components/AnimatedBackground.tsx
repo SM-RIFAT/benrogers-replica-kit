@@ -1,20 +1,20 @@
 
 import React, { useEffect, useRef } from 'react';
 
-interface Polygon {
+interface Particle {
   x: number;
   y: number;
   vx: number;
   vy: number;
   size: number;
-  rotation: number;
-  rotationSpeed: number;
   opacity: number;
+  hue: number;
+  type: 'circle' | 'triangle' | 'diamond';
 }
 
 const AnimatedBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const polygonsRef = useRef<Polygon[]>([]);
+  const particlesRef = useRef<Particle[]>([]);
   const mouseRef = useRef({ x: 0, y: 0 });
   const animationRef = useRef<number>();
 
@@ -30,137 +30,161 @@ const AnimatedBackground = () => {
       canvas.height = window.innerHeight;
     };
 
-    const createPolygons = () => {
-      const polygons: Polygon[] = [];
-      const numberOfPolygons = 12;
+    const createParticles = () => {
+      const particles: Particle[] = [];
+      const numberOfParticles = Math.min(80, Math.floor((canvas.width * canvas.height) / 8000));
 
-      for (let i = 0; i < numberOfPolygons; i++) {
-        polygons.push({
+      for (let i = 0; i < numberOfParticles; i++) {
+        particles.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: (Math.random() - 0.5) * 0.3,
-          size: Math.random() * 80 + 40,
-          rotation: Math.random() * Math.PI * 2,
-          rotationSpeed: (Math.random() - 0.5) * 0.01,
-          opacity: Math.random() * 0.3 + 0.1,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+          size: Math.random() * 4 + 2,
+          opacity: Math.random() * 0.6 + 0.2,
+          hue: Math.random() * 60 + 240, // Blue to purple range
+          type: ['circle', 'triangle', 'diamond'][Math.floor(Math.random() * 3)] as 'circle' | 'triangle' | 'diamond',
         });
       }
-      polygonsRef.current = polygons;
+      particlesRef.current = particles;
     };
 
-    const drawPolygon = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, rotation: number, opacity: number) => {
-      const sides = 6;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.rotate(rotation);
+    const drawCircle = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
       ctx.beginPath();
+      ctx.arc(x, y, size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
+      ctx.fill();
       
-      for (let i = 0; i < sides; i++) {
-        const angle = (i * 2 * Math.PI) / sides;
-        const px = Math.cos(angle) * size;
-        const py = Math.sin(angle) * size;
-        
-        if (i === 0) {
-          ctx.moveTo(px, py);
-        } else {
-          ctx.lineTo(px, py);
-        }
-      }
-      
+      // Add glow effect
+      ctx.shadowColor = `hsla(${hue}, 70%, 60%, ${opacity * 0.8})`;
+      ctx.shadowBlur = size * 2;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    };
+
+    const drawTriangle = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x, y - size);
+      ctx.lineTo(x - size * 0.866, y + size * 0.5);
+      ctx.lineTo(x + size * 0.866, y + size * 0.5);
       ctx.closePath();
-      ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-      ctx.restore();
+      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
+      ctx.fill();
+    };
+
+    const drawDiamond = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, opacity: number, hue: number) => {
+      ctx.beginPath();
+      ctx.moveTo(x, y - size);
+      ctx.lineTo(x + size, y);
+      ctx.lineTo(x, y + size);
+      ctx.lineTo(x - size, y);
+      ctx.closePath();
+      ctx.fillStyle = `hsla(${hue}, 70%, 60%, ${opacity})`;
+      ctx.fill();
     };
 
     const drawConnections = () => {
-      const polygons = polygonsRef.current;
-      const mouse = mouseRef.current;
-
-      // Draw connections between polygons
-      for (let i = 0; i < polygons.length; i++) {
-        for (let j = i + 1; j < polygons.length; j++) {
-          const dx = polygons[i].x - polygons[j].x;
-          const dy = polygons[i].y - polygons[j].y;
+      const particles = particlesRef.current;
+      
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
 
-          if (distance < 200) {
-            const opacity = (1 - distance / 200) * 0.15;
-            ctx.strokeStyle = `rgba(147, 51, 234, ${opacity})`;
-            ctx.lineWidth = 0.8;
+          if (distance < 120) {
+            const opacity = (1 - distance / 120) * 0.15;
+            const gradient = ctx.createLinearGradient(
+              particles[i].x, particles[i].y,
+              particles[j].x, particles[j].y
+            );
+            gradient.addColorStop(0, `hsla(${particles[i].hue}, 70%, 60%, ${opacity})`);
+            gradient.addColorStop(1, `hsla(${particles[j].hue}, 70%, 60%, ${opacity})`);
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(polygons[i].x, polygons[i].y);
-            ctx.lineTo(polygons[j].x, polygons[j].y);
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
           }
-        }
-
-        // Draw connections to mouse
-        const dx = polygons[i].x - mouse.x;
-        const dy = polygons[i].y - mouse.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 150) {
-          const opacity = (1 - distance / 150) * 0.4;
-          ctx.strokeStyle = `rgba(236, 72, 153, ${opacity})`;
-          ctx.lineWidth = 1.2;
-          ctx.beginPath();
-          ctx.moveTo(polygons[i].x, polygons[i].y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.stroke();
         }
       }
     };
 
-    const updatePolygons = () => {
-      const polygons = polygonsRef.current;
+    const updateParticles = () => {
+      const particles = particlesRef.current;
       const mouse = mouseRef.current;
 
-      polygons.forEach(polygon => {
-        // Mouse attraction with smooth easing
-        const dx = mouse.x - polygon.x;
-        const dy = mouse.y - polygon.y;
+      particles.forEach(particle => {
+        // Mouse interaction - gentle attraction
+        const dx = mouse.x - particle.x;
+        const dy = mouse.y - particle.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
 
-        if (distance < 120) {
-          const force = (120 - distance) / 120 * 0.002;
-          polygon.vx += dx * force;
-          polygon.vy += dy * force;
+        if (distance < 200) {
+          const force = (200 - distance) / 200 * 0.0008;
+          particle.vx += dx * force;
+          particle.vy += dy * force;
         }
 
         // Update position
-        polygon.x += polygon.vx;
-        polygon.y += polygon.vy;
-        polygon.rotation += polygon.rotationSpeed;
+        particle.x += particle.vx;
+        particle.y += particle.vy;
 
-        // Apply friction
-        polygon.vx *= 0.98;
-        polygon.vy *= 0.98;
+        // Apply gentle friction
+        particle.vx *= 0.995;
+        particle.vy *= 0.995;
 
-        // Boundary wrapping
-        if (polygon.x < -polygon.size) polygon.x = canvas.width + polygon.size;
-        if (polygon.x > canvas.width + polygon.size) polygon.x = -polygon.size;
-        if (polygon.y < -polygon.size) polygon.y = canvas.height + polygon.size;
-        if (polygon.y > canvas.height + polygon.size) polygon.y = -polygon.size;
+        // Boundary behavior - wrap around smoothly
+        if (particle.x < -20) particle.x = canvas.width + 20;
+        if (particle.x > canvas.width + 20) particle.x = -20;
+        if (particle.y < -20) particle.y = canvas.height + 20;
+        if (particle.y > canvas.height + 20) particle.y = -20;
+
+        // Subtle size pulsing
+        particle.size += Math.sin(Date.now() * 0.001 + particle.x * 0.01) * 0.02;
       });
     };
 
     const draw = () => {
+      // Create gradient background overlay
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+      );
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.1)');
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Draw connections first
       drawConnections();
       
-      // Draw polygons
-      polygonsRef.current.forEach(polygon => {
-        drawPolygon(ctx, polygon.x, polygon.y, polygon.size, polygon.rotation, polygon.opacity);
+      // Draw particles
+      particlesRef.current.forEach(particle => {
+        ctx.save();
+        
+        switch (particle.type) {
+          case 'circle':
+            drawCircle(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
+            break;
+          case 'triangle':
+            drawTriangle(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
+            break;
+          case 'diamond':
+            drawDiamond(ctx, particle.x, particle.y, particle.size, particle.opacity, particle.hue);
+            break;
+        }
+        
+        ctx.restore();
       });
     };
 
     const animate = () => {
-      updatePolygons();
+      updateParticles();
       draw();
       animationRef.current = requestAnimationFrame(animate);
     };
@@ -175,12 +199,12 @@ const AnimatedBackground = () => {
 
     const handleResize = () => {
       resizeCanvas();
-      createPolygons();
+      createParticles();
     };
 
     // Initialize
     resizeCanvas();
-    createPolygons();
+    createParticles();
     animate();
 
     // Event listeners
